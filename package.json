@@ -1,0 +1,7 @@
+{
+  "name": "gpt4all-wrapper-js",
+  "version": "1.0.0",
+  "type":"module",
+  "description": "",
+  "main": "gpt.js"
+}
