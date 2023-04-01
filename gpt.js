@@ -17,7 +17,7 @@ class GPT4ALL {
         this.#e.emit("ready");
         this.#buffer="";
       }
-      else if(data.toString().includes(">")) {
+      else if(data.toString().match(/^>$/m")) {
         this.#e.emit("data",this.#buffer);
         this.#buffer="";
       }
