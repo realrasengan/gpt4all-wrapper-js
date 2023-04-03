@@ -1,38 +1,30 @@
-import { spawn } from 'child_process';
-import events from 'events';
+const { spawn } = require('child_process');
+const { EventEmitter } = require("events");
 
-class GPT4ALL {
-  #chat;
-  #status=0;
-  #e;
-  #buffer;
-  constructor(app) {
-    this.#chat = spawn(app);
-
-    this.#e = new events.EventEmitter();
-
-    this.#chat.stdout.on('data', (data) => {
-      if(data.toString().includes("\x1b[33m")) {
-        this.#status=1;
-        this.#e.emit("ready");
-        this.#buffer="";
-      }
-      else if(data.toString().match(/^> $/m)) {
-        this.#e.emit("data",this.#buffer);
-        this.#buffer="";
-      }
-      else
-        this.#buffer+=data.toString();
-    });
-    this.#chat.on('exit', (code) => { console.error(`${code}`) });
-  }
-  on(type,func) { this.#e.addListener(type,func); }
-  ask(msg) {
-    if(this.#status===0)
-      return null;
-    this.#chat.stdin.write(`${msg}\n`);
-    return new Promise((resolve)=>{ this.on("data",(data)=>{ resolve(data) }) });
-  }
+class GPT4ALL extends EventEmitter {
+    status = 0;
+    buffer = "";
+    constructor(app) {
+        super();
+        this.chat = spawn(app);
+        this.chat.stdout.on('data', (data) => {
+            let str = data.toString();
+            if (str.includes("\x1b[33m")) {
+                this.status = 1;
+                this.emit("ready");
+                this.buffer = "";
+            } else if (str.includes(">")) {
+                this.emit("data", this.buffer);
+                this.buffer = "";
+            } else {
+                this.buffer += str;
+            }
+        });
+    }
+    async ask(msg) {
+        if (!this.status) return null;
+        this.chat.stdin.write(`${msg}\n`);
+        return new Promise(resolve => this.once("data", resolve));
+    }
 }
-
-export default GPT4ALL;
+module.exports = GPT4ALL;
